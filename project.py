@@ -32,11 +32,34 @@ def init():
     glEnable(GL_DEPTH_TEST)
     glClearColor(0.5, 0.8, 0.9, 1.0)  # Light blue sky
 
+# def draw_lives():
+#     glColor3f(1, 0, 0)  # Red color for lives
+#     glRasterPos2f(-12, 10)
+#     for digit in str(player_life):
+#         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(digit))
 def draw_lives():
-    glColor3f(1, 0, 0)  # Red color for lives
-    glRasterPos2f(-5.5, 4.5)
-    for digit in str(player_life):
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(digit))
+    glColor3f(1, 0, 0)  # Red color
+    for i in range(player_life):
+        x = -5.5 + i * 1.0  # spacing between icons
+        y = 4.5
+        draw_heart(x, y)
+
+def draw_heart(x, y):
+    glBegin(GL_LINES)
+    glVertex2f(x, y)
+    glVertex2f(x-0.25, y+0.25)
+    glVertex2f(x - 0.25, y + 0.25)
+    glVertex2f(x - 0.125, y + 0.5)
+    glVertex2f(x - 0.125, y + 0.5)
+    glVertex2f(x, y + 0.25)
+    glVertex2f(x, y + 0.25)
+    glVertex2f(x+0.125, y + 0.5)
+    glVertex2f(x + 0.125, y + 0.5)
+    glVertex2f(x + 0.25, y + 0.25)
+    glVertex2f(x + 0.25, y + 0.25)
+    glVertex2f(x, y)
+    glEnd()
+
 
 def check_collision():
     global player_life, hit_cooldown
