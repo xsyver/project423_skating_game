@@ -16,6 +16,8 @@ jump_height     = 0.0    # Current vertical offset
 player_life     = 5      # Player's life
 hit_cooldown    = 0      # Cooldown timer for collision detection (in ms)
 hit_cooldown_max = 500   # Maximum cooldown duration (500ms)
+life_hit_cooldown= 0     # Cooldown timer for life collision detection (in ms)
+life_hit_cooldown_max=500  # different variable for life as after getting a life you don't need cooldown for obstacle
 road_offset    = 0.0     # Offset for stripe animation
 road_speed     = 0.03    # Speed of road movement
 stripe_length  = 5.0     # Length of each stripe along Z
@@ -28,18 +30,44 @@ obstacles      = []      # List of {'lane', 'z'}
 # --- Human (NPC) states ---
 humans         = []      # List of {'lane', 'z'}
 
+# --- Collect Lives ---
+collect_lives  = []      # List of {'lane', 'z'}
+
 def init():
     glEnable(GL_DEPTH_TEST)
     glClearColor(0.5, 0.8, 0.9, 1.0)  # Light blue sky
 
+# def draw_lives():
+#     glColor3f(1, 0, 0)  # Red color for lives
+#     glRasterPos2f(-12, 10)
+#     for digit in str(player_life):
+#         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(digit))
 def draw_lives():
-    glColor3f(1, 0, 0)  # Red color for lives
-    glRasterPos2f(-5.5, 4.5)
-    for digit in str(player_life):
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(digit))
+    glColor3f(1, 0, 0)  # Red color
+    for i in range(player_life):
+        x = -5.5 + i * 1.0  # spacing between icons
+        y = 4.5
+        draw_heart(x, y)
+
+def draw_heart(x, y):
+    glBegin(GL_LINES)
+    glVertex2f(x, y)
+    glVertex2f(x-0.25, y+0.25)
+    glVertex2f(x - 0.25, y + 0.25)
+    glVertex2f(x - 0.125, y + 0.5)
+    glVertex2f(x - 0.125, y + 0.5)
+    glVertex2f(x, y + 0.25)
+    glVertex2f(x, y + 0.25)
+    glVertex2f(x+0.125, y + 0.5)
+    glVertex2f(x + 0.125, y + 0.5)
+    glVertex2f(x + 0.25, y + 0.25)
+    glVertex2f(x + 0.25, y + 0.25)
+    glVertex2f(x, y)
+    glEnd()
+
 
 def check_collision():
-    global player_life, hit_cooldown
+    global player_life, hit_cooldown, life_hit_cooldown_max, life_hit_cooldown
     now = glutGet(GLUT_ELAPSED_TIME)
     for obs in humans:
         # Only check if in the same lane and close in Z
@@ -72,6 +100,24 @@ def check_collision():
                 player_life -= 1
                 hit_cooldown = now
                 print(f"Hit! Lives left: {player_life}")
+                if player_life <= 0:
+                    game_over()
+    # collision detection for lives adds life upto 5
+    for obs in collect_lives:
+        # Only check if in the same lane and close in Z
+        if player_lane == obs['lane'] and abs(obs['z'] - 11) < 1.0:
+            height = obs.get('height', 1.0)  # fallback to 1.0 if height missing
+
+            # Skip collision if jumping over life (your loss)
+            if jumping and jump_height > height:
+                continue
+
+            # Only add life if not on cooldown
+            if now - life_hit_cooldown > life_hit_cooldown_max:
+                if player_life < 5:
+                    player_life += 1
+                    print(f"Collected life! Lives left: {player_life}")
+                life_hit_cooldown = now
                 if player_life <= 0:
                     game_over()
 
@@ -146,6 +192,8 @@ def draw():
     draw_map()
     draw_obstacles()
     draw_humans()
+    # added draw for lives
+    draw_collect_lives()
     # Draw the main player on board
     draw_person(player_lane, 11, include_board=True)
     draw_lives()
@@ -224,6 +272,33 @@ def draw_humans():
     for h in humans:
         draw_person(h['lane'], h['z'], include_board=False)
 
+# Player will collect life and it will increase lives upto 5
+def draw_collect_lives():
+    for l in collect_lives:
+        draw_collect_life(l['lane'], l['z'])
+
+# drawing 3D heart
+def draw_collect_life(lane, z):
+    x = 4 * lane
+    glPushMatrix()
+    glTranslatef(x-0.25, 2, z)
+    glColor3f(1, 0, 0)
+    glutSolidSphere(0.5, 32, 32)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(x+0.25, 2, z)
+    glColor3f(1, 0, 0)
+    glutSolidSphere(0.5, 32, 32)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(x, 1.8, z)
+    glRotatef(90, 1, 0, 0)
+    glColor3f(1, 0, 0)
+    glutSolidCone(0.75, 1.2, 32, 32)
+    glPopMatrix()
+
 def reshape(w,h):
     glViewport(0,0,w,h)
     glMatrixMode(GL_PROJECTION)
@@ -232,7 +307,7 @@ def reshape(w,h):
     glMatrixMode(GL_MODELVIEW)
 
 def update():
-    global jumping, jump_height, road_offset, obstacles, humans, player_life
+    global jumping, jump_height, road_offset, obstacles, humans, player_life, collect_lives
     now = glutGet(GLUT_ELAPSED_TIME)
     # Jump
     if jumping:
@@ -256,11 +331,18 @@ def update():
         h['z'] += road_speed
         if h['z'] > 20: humans.remove(h)
 
+    # Remove lives after getting out of display
+    for l in collect_lives[:]:
+        l['z'] += road_speed
+        if l['z'] > 20: collect_lives.remove(l)
+
     # Lower spawn rates
     if random.random() < 0.002:  # fewer cars
         obstacles.append({'lane': random.choice([-1,0,1]), 'z': -100.0})
     if random.random() < 0.001:  # fewer humans
         humans.append({'lane': random.choice([-1,0,1]), 'z': -100.0})
+    if random.random() < 0.0005:  # fewer collect_lives
+        collect_lives.append({'lane': random.choice([-1,0,1]), 'z': -100.0})
 
     check_collision()
     glutPostRedisplay()
