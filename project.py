@@ -27,10 +27,10 @@ stripe_length  = 5.0     # Length of each stripe along Z
 stripe_spacing = 15.0    # Gap between stripes
 
 # --- Shield variables ---
-shield_active   = False  # Is shield currently active?
-shield_start    = 0      # Time when shield was activated (ms)
-shield_duration = 10000  # Shield duration in ms (10 seconds)
-shield_cooldown = 0      # Cooldown timer for shield collection
+shield_active   = False  # Track if player has shield protection
+shield_start    = 0      # When did we activate the shield?
+shield_duration = 10000  # Shield lasts 10 seconds
+shield_cooldown = 0      # Need to wait before picking up another shield
 
 # --- Game stats ---
 score          = 0       # Player score
@@ -57,9 +57,9 @@ birds          = []      # List of {'lane', 'z', 'height'}
 collect_lives  = []      # List of {'lane', 'z'}
 
 # --- Collect Shields ---
-collect_shields = []     # List of {'lane', 'z'}
-max_shields = 1          # Maximum number of shields allowed at once
-shield_spawn_chance = 0.0015  # Reduced spawn chance (previously 0.003)
+collect_shields = []     # Keeps track of shield powerups on the track
+max_shields = 1          # Only want one shield on screen at a time
+shield_spawn_chance = 0.0015  # Made shields rarer - was too common at 0.003
 
 # --- Environment objects ---
 trees         = []      # List of tree positions
@@ -232,7 +232,7 @@ def check_collision():
     # Check if shield has expired
     if shield_active and (now - shield_start) > shield_duration:
         shield_active = False
-        print("Shield deactivated!")
+        print("Shield gone! You're vulnerable again!")
     
     # Check collision with cars and humans
     for obs in humans + obstacles:
@@ -290,7 +290,7 @@ def check_collision():
                 shield_active = True
                 shield_start = now
                 shield_cooldown = now
-                print("Shield activated! Protected for 10 seconds.")
+                print("Awesome! Shield activated! You're invincible for 10 seconds!")
                 collect_shields.remove(shield)  # Remove the collected shield
 
 
