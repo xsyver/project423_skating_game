@@ -50,20 +50,24 @@ def draw_lives():
         draw_heart(x, y)
 
 def draw_heart(x, y):
-    glBegin(GL_LINES)
-    glVertex2f(x, y)
-    glVertex2f(x-0.25, y+0.25)
-    glVertex2f(x - 0.25, y + 0.25)
-    glVertex2f(x - 0.125, y + 0.5)
-    glVertex2f(x - 0.125, y + 0.5)
-    glVertex2f(x, y + 0.25)
-    glVertex2f(x, y + 0.25)
-    glVertex2f(x+0.125, y + 0.5)
-    glVertex2f(x + 0.125, y + 0.5)
-    glVertex2f(x + 0.25, y + 0.25)
-    glVertex2f(x + 0.25, y + 0.25)
-    glVertex2f(x, y)
-    glEnd()
+    glPushMatrix()
+    glTranslatef(x-0.15, y, 0)
+    glColor3f(1, 0, 0)
+    glutSolidSphere(0.2, 32, 32)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(x+0.15, y, 0)
+    glColor3f(1, 0, 0)
+    glutSolidSphere(0.2, 32, 32)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(x, y-0.05, 0)
+    glRotatef(90, 1, 0, 0)
+    glColor3f(1, 0, 0)
+    glutSolidCone(0.35, 0.5, 32, 32)
+    glPopMatrix()
 
 
 def check_collision():
